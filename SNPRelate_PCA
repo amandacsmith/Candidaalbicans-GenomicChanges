@@ -1,0 +1,36 @@
+BiocManager::install("SNPRelate")
+#Load all packages
+library(SNPRelate)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+
+
+
+#Create a PCA plot  
+vcf.fn <- ("ACSoutput.vcf.gz") ##This output file was created using the GATK pipeline (see other codes)
+snpgdsVCF2GDS (vcf.fn, "candidaalbicans2021.gds", method="copy.num.of.ref", ignore.chr.prefix = "chr")
+genofile <- snpgdsOpen("candidaalbicans2021.gds")
+snpgdsSummary("candidaalbicans2021.gds")
+sample.id <- read.gdsn(index.gdsn(genofile, "sample.id"))
+pop_code <- read.table("pop.group", header = F) #This dataframe contains information about the VCF file including the color assignment for the PCA plot
+pop_names <- pop_code[,-1]
+pop_name <- pop_names[,-2]
+Calbicans_pca<-snpgdsPCA(genofile, autosome.only = FALSE, remove.monosnp = FALSE)
+head(Calbicans_pca$eigenval)
+
+#variance proportion
+head(round(Calbicans_pca$varprop*100, 2))
+
+##make a data.frame
+df <- data.frame(sample.id = Calbicans_pca$sample.id, pop = factor(pop_name)[match(Calbicans_pca$sample.id, sample.id)], EV1 = Calbicans_pca$eigenvect[,1], EV2 = Calbicans_pca$eigenvect[,2], stringsAsFactors = FALSE)
+head(df)
+
+#draw
+plot(Calbicans_pca)
+plot(Calbicans_pca, 1:4, col=as.integer(df$pop))
+
+
+#draw
+plot(df$EV2, df$EV1, col=as.integer(df$pop), xlab="eigenvector 2", ylab="eigenvector 1")
+legend("topright", legend=levels(df$pop), pch="o", col=1:6)
