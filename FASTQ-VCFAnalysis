@@ -7,3 +7,39 @@ bwa mem CAgenome.fna ACS1Trim_1.fq.gz ACS1Trim_2.fq.gz | samtools view -b - | sa
 
 #Sort the bam file and create a VCF 
 bcftools mpileup -d 100000 -f CAgenome.fna ACS1.sorted.bam | bcftools call -c > ACS1.vcf
+
+#Index the bam file
+samtools index ACS7.sorted.bam
+
+#Convert VCF to a FASTA file
+Vcfutils.pl vcf2fq ACS1.vcf > acs.fq
+Seqtk seq -q -40 -A acs.fq > acs.fa #-q 40 -A converts base calls with a Phred quality under 40 to lower case
+
+#Plot and get statistics from the VCF files
+#Make the statistics file
+bcftools stats ACS1.vcf > ACS1.stats
+
+#Download and install python, techtonic and matplotlib	https://tectonic-typesetting.github.io/en-US/install.html#pre-built-binary-packages
+#Plot the statistics file
+ plot-vcfstats -p ACS1 ACS1.stats
+ 
+ 
+ 
+ #Creating variant files using the GATK pipeline and Haplotypo to use both haplotypes of the candida albicans genome as a reference
+ #Download the haplotypo code https://github.com/gabaldonlab/haplotypo
+ #Download and/or update Java and Python
+ #Download the phased reference genome from Muzzey et al 2013 additional file 3
+ python mapping.py -o out_dir -thr 8 -ref ref.fa -t strain -f1 reads.1.fq -f2 reads.2.fq
+ 
+ #create VCF file using haplotypo with GATK
+ #Create the FASTA sequence dictionary file 
+ GATK CreateSequenceDictionary -R ref.fasta
+ #Create a FASTA index file for the reference
+ samtools faidx ref.fasta
+ #Create your VCF files
+ gatk HaplotypeCaller -R ref.fasta -I ACS1.mkd.bam -O ACS1.g.vcf.gz -ERC GVCF
+ 
+ 
+ #To combine all VCF files to use for analysis in R
+ gatk CombineGVCFs -R ref.fasta --variant ACS1.g.vcf.gz --variant ACS2.g.vcf.gz --variant ACS3.g.vcf.gz -O ACScohort.g.vcf.gz
+ gatk --java-options "-Xmx4g" GenotypeGVCFs -R ref.fasta -V ACScohort.g.vcf.gz -O ACSoutput.vcf.gz
