@@ -1,5 +1,7 @@
 #Trim ends 
 #ACS files are my paired-end sequencing reads
+#CAgenome is the Candida albicans reference genome
+#All data files are located in the same directory and executables are located in the directory directly above the data directory
 java -jar trimmomatic-0.39.jar PE ACS1_1.fastq.gz ACS1_2.fastq.gz ACS1Trim_1.fq.gz output_forward_unpaired.fq.gz ACS1Trim_2.fq.gz output_reverse_unpaired.fq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:3
 
 #Create Bam files from FASTQ
